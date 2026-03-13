@@ -1,0 +1,11 @@
+node_modules
+.dist
+.env
+.env.backup.*
+.devnet-accounts.json
+.devnet-seeds.json
+
+.env
+.devnet-seeds.json
+.devnet-accounts.json
+node_modules/

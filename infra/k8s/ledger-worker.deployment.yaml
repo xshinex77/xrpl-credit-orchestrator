@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xrpl-credit-ledger-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: xrpl-credit-ledger-worker
+  template:
+    metadata:
+      labels:
+        app: xrpl-credit-ledger-worker
+    spec:
+      containers:
+        - name: ledger-worker
+          image: xrpl-credit-orchestrator/ledger-worker:latest
+          envFrom:
+            - secretRef:
+                name: xrpl-credit-secrets

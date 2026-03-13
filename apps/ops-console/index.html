@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>XRPL Credit Orchestrator - Ops Console</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#0b1020;color:#eef2ff;margin:0} header{padding:16px 20px;border-bottom:1px solid #24314f;background:#121933;position:sticky;top:0} .wrap{padding:20px;max-width:1200px;margin:0 auto}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}.card{background:#121933;border:1px solid #24314f;border-radius:16px;padding:16px}.kpi{font-size:28px;font-weight:700} input,select,button,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #34476b;background:#0f172a;color:#eef2ff;box-sizing:border-box;margin-top:6px} button{cursor:pointer;background:#1d4ed8} pre{white-space:pre-wrap;word-break:break-word;background:#0a1223;padding:12px;border-radius:12px;max-height:320px;overflow:auto} a{color:#93c5fd} .row{display:grid;gap:10px}
+</style></head><body>
+<header><strong>Ops Console</strong> — system overview / orchestration queue / operator actions</header>
+<div class="wrap">
+  <div class="grid">
+    <section class="card">
+      <h2>接続</h2>
+      <label>API URL <input id="apiUrl" value="http://localhost:3000"></label>
+      <label>Username <input id="username" value="admin"></label>
+      <label>Password <input id="password" type="password" value="change-me"></label>
+      <button id="loginBtn">ログイン</button>
+      <pre id="loginOut"></pre>
+      <p><a href="../borrower-portal/">Borrower Portal</a> / <a href="../lender-portal/">Lender Portal</a></p>
+    </section>
+    <section class="card"><h2>Dashboard</h2><button id="dashboardBtn">取得</button><pre id="dashboardOut"></pre></section>
+    <section class="card"><h2>Outbox</h2><button id="outboxBtn">取得</button><pre id="outboxOut"></pre></section>
+    <section class="card"><h2>Reconciliation</h2><button id="reconBtn">取得</button><pre id="reconOut"></pre></section>
+  </div>
+
+  <div class="grid" style="margin-top:16px">
+    <section class="card row">
+      <h2>Create Borrower</h2>
+      <label>Name <input id="borrowerName" value="Demo Borrower LLC"></label>
+      <label>Country <input id="borrowerCountry" value="JP"></label>
+      <label>XRPL Address <input id="borrowerAddress" value="rBorrowerDemoAddress"></label>
+      <button id="borrowerBtn">作成</button>
+      <pre id="borrowerOut"></pre>
+    </section>
+    <section class="card row">
+      <h2>Create Vault</h2>
+      <label>Owner <input id="vaultOwner" value="rVaultOwnerDemoAddress"></label>
+      <label>Asset Type <select id="vaultAssetType"><option>XRP</option><option>MPT</option><option>IOU</option></select></label>
+      <label>MPT Issuance ID <input id="vaultMpt"></label>
+      <label>Private <select id="vaultPrivate"><option value="true">true</option><option value="false">false</option></select></label>
+      <button id="vaultBtn">作成</button>
+      <pre id="vaultOut"></pre>
+    </section>
+    <section class="card row">
+      <h2>Create Loan Broker</h2>
+      <label>Vault ID <input id="brokerVaultId"></label>
+      <label>Owner address <input id="brokerOwner" value="rVaultOwnerDemoAddress"></label>
+      <label>Management fee <input id="brokerFee" value="1000"></label>
+      <label>Cover min <input id="brokerCoverMin" value="1000"></label>
+      <label>Cover liq <input id="brokerCoverLiq" value="500"></label>
+      <button id="brokerBtn">作成</button>
+      <pre id="brokerOut"></pre>
+    </section>
+    <section class="card row">
+      <h2>Create Loan + Cosign</h2>
+      <label>Loan Broker ID <input id="loanBrokerId"></label>
+      <label>Borrower Party ID <input id="loanBorrowerPartyId"></label>
+      <label>Borrower XRPL Address <input id="loanBorrowerAddress" value="rBorrowerDemoAddress"></label>
+      <label>Principal <input id="loanPrincipal" value="1000"></label>
+      <label>Interest rate <input id="loanRate" value="500"></label>
+      <label>Payment total <input id="loanPaymentTotal" value="12"></label>
+      <label>Payment interval seconds <input id="loanPaymentInterval" value="2592000"></label>
+      <label>Grace period seconds <input id="loanGrace" value="604800"></label>
+      <button id="loanBtn">ローン作成</button>
+      <button id="cosignBtn">Cosign packet 生成</button>
+      <pre id="loanOut"></pre>
+    </section>
+  </div>
+</div>
+<script>
+let token=null,createdLoanId=null; const $=id=>document.getElementById(id); const apiBase=()=>$('apiUrl').value.trim();
+async function api(path, options={}){const headers={'content-type':'application/json',...(options.headers||{})}; if(token) headers.authorization=`Bearer ${token}`; const res=await fetch(apiBase()+path,{...options,headers}); const text=await res.text(); let body; try{body=JSON.parse(text)}catch{body=text} return {status:res.status,body}}
+$('loginBtn').onclick=async()=>{const r=await api('/v1/auth/login',{method:'POST',body:JSON.stringify({username:$('username').value,password:$('password').value})}); token=r.body.accessToken||null; $('loginOut').textContent=JSON.stringify(r,null,2)};
+$('dashboardBtn').onclick=async()=>{$('dashboardOut').textContent=JSON.stringify(await api('/v1/dashboard'),null,2)};
+$('outboxBtn').onclick=async()=>{$('outboxOut').textContent=JSON.stringify(await api('/v1/outbox'),null,2)};
+$('reconBtn').onclick=async()=>{$('reconOut').textContent=JSON.stringify(await api('/v1/reconciliation-runs'),null,2)};
+$('borrowerBtn').onclick=async()=>{const r=await api('/v1/borrowers',{method:'POST',body:JSON.stringify({legalName:$('borrowerName').value,countryCode:$('borrowerCountry').value,xrplAddress:$('borrowerAddress').value})}); if(r.body.id) $('loanBorrowerPartyId').value=r.body.id; $('borrowerOut').textContent=JSON.stringify(r,null,2)};
+$('vaultBtn').onclick=async()=>{const r=await api('/v1/vaults',{method:'POST',body:JSON.stringify({ownerAddress:$('vaultOwner').value,assetType:$('vaultAssetType').value,assetMptIssuanceId:$('vaultMpt').value,isPrivate:$('vaultPrivate').value==='true'})}); if(r.body.vault?.id) $('brokerVaultId').value=r.body.vault.id; $('vaultOut').textContent=JSON.stringify(r,null,2)};
+$('brokerBtn').onclick=async()=>{const r=await api('/v1/loan-brokers',{method:'POST',body:JSON.stringify({vaultId:$('brokerVaultId').value,ownerAddress:$('brokerOwner').value,managementFeeRate:Number($('brokerFee').value),coverRateMinimum:Number($('brokerCoverMin').value),coverRateLiquidation:Number($('brokerCoverLiq').value)})}); if(r.body.loanBroker?.id) $('loanBrokerId').value=r.body.loanBroker.id; $('brokerOut').textContent=JSON.stringify(r,null,2)};
+$('loanBtn').onclick=async()=>{const r=await api('/v1/loans',{method:'POST',body:JSON.stringify({loanBrokerId:$('loanBrokerId').value,borrowerPartyId:$('loanBorrowerPartyId').value,borrowerAddress:$('loanBorrowerAddress').value,principal:$('loanPrincipal').value,interestRate:Number($('loanRate').value),paymentTotal:Number($('loanPaymentTotal').value),paymentInterval:Number($('loanPaymentInterval').value),gracePeriod:Number($('loanGrace').value)})}); createdLoanId=r.body.id||null; $('loanOut').textContent=JSON.stringify(r,null,2)};
+$('cosignBtn').onclick=async()=>{if(!createdLoanId){$('loanOut').textContent='先に loan を作成してください'; return} const r=await api(`/v1/loans/${createdLoanId}/cosign-packet`,{method:'POST',body:'{}'}); $('loanOut').textContent=JSON.stringify(r,null,2)};
+</script>
+</body></html>

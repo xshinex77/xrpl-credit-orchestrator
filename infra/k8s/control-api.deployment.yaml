@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xrpl-credit-control-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: xrpl-credit-control-api
+  template:
+    metadata:
+      labels:
+        app: xrpl-credit-control-api
+    spec:
+      containers:
+        - name: control-api
+          image: xrpl-credit-orchestrator/control-api:latest
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: xrpl-credit-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xrpl-credit-control-api
+spec:
+  selector:
+    app: xrpl-credit-control-api
+  ports:
+    - port: 3000
+      targetPort: 3000

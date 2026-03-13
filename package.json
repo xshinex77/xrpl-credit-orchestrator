@@ -1,0 +1,23 @@
+{
+  "name": "xrpl-credit-orchestrator-starter",
+  "private": true,
+  "version": "2.4.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "start:api": "node apps/control-api/src/main.js",
+    "start:worker": "node apps/ledger-worker/src/main.js",
+    "start:ops": "python3 -m http.server 4173 -d apps/ops-console",
+    "start:borrower": "python3 -m http.server 4174 -d apps/borrower-portal",
+    "start:lender": "python3 -m http.server 4175 -d apps/lender-portal",
+    "test": "node --test tests/*.test.js",
+    "smoke:devnet": "node scripts/devnet-smoke.js",
+    "fund:devnet": "node scripts/devnet-fund.js",
+    "e2e:devnet": "node scripts/devnet-e2e.js",
+    "pack": "python3 scripts/package_artifact.py",
+    "check:env": "node scripts/env-check.js"
+  }
+}
